@@ -1,5 +1,6 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/authStore'
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/authStore";
+import { useCartStore } from "../stores/cartStore";
 
 function BrandMark() {
   return (
@@ -9,18 +10,23 @@ function BrandMark() {
         <path d="m11 17 3-3 3.2 3.2L21 13.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
-  )
+  );
 }
 
 export function AppLayout() {
-  const profile = useAuthStore((state) => state.profile)
-  const logout = useAuthStore((state) => state.logout)
-  const navigate = useNavigate()
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const profile = useAuthStore((state) => state.profile);
+  const logout = useAuthStore((state) => state.logout);
+
+  const cartItems = useCartStore((state) => state.items);
+  const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout()
-    navigate('/login', { replace: true })
-  }
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="app-shell">
@@ -32,23 +38,55 @@ export function AppLayout() {
           </Link>
 
           <nav className="navbar-nav">
-            <NavLink to="/profile" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              Profil
+            <NavLink
+              to="/"
+              className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+            >
+              Mahsulotlar
             </NavLink>
+            <NavLink
+              to="/cart"
+              className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+            >
+              Savat
+              {totalCartCount > 0 && (
+                <span className="cart-badge">{totalCartCount}</span>
+              )}
+            </NavLink>
+            {accessToken && (
+              <NavLink
+                to="/profile"
+                className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+              >
+                Profil
+              </NavLink>
+            )}
           </nav>
 
           <div className="navbar-user">
-            {profile?.avatar ? (
-              <img src={profile.avatar} alt={profile.name} className="user-avatar-small" />
+            {accessToken ? (
+              <>
+                {profile?.avatar ? (
+                  <img
+                    src={profile.avatar}
+                    alt={profile.name}
+                    className="user-avatar-small"
+                  />
+                ) : (
+                  <span className="user-avatar-small placeholder">
+                    {profile?.name?.charAt(0).toUpperCase() || "U"}
+                  </span>
+                )}
+                <span className="user-name">{profile?.name || "Foydalanuvchi"}</span>
+                <button className="logout-btn" type="button" onClick={handleLogout}>
+                  Chiqish
+                </button>
+              </>
             ) : (
-              <span className="user-avatar-small placeholder">
-                {profile?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
+              <Link to="/login" className="login-nav-btn">
+                Kirish
+              </Link>
             )}
-            <span className="user-name">{profile?.name || 'Foydalanuvchi'}</span>
-            <button className="logout-btn" type="button" onClick={handleLogout}>
-              Chiqish
-            </button>
           </div>
         </div>
       </header>
@@ -57,5 +95,5 @@ export function AppLayout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }
